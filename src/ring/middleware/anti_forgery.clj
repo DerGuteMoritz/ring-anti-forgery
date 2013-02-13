@@ -7,9 +7,9 @@
           in POST forms if the handler is wrapped in wrap-anti-forgery."}
   *anti-forgery-token*)
 
-(defn- csrf-token [request]
+(defn- csrf-token [request generate-token-fn]
   (or (get-in request [:cookies "__anti-forgery-token" :value])
-      (random/base64 60)))
+      (generate-token-fn)))
 
 (defn- assoc-csrf-token [response request token]
   (let [old-token (get-in request [:cookies "__anti-forgery-token" :value])]
@@ -42,15 +42,20 @@
    :headers {"Content-Type" "text/html"}
    :body body})
 
+(defn invalid-csrf-token [request]
+  (access-denied "<h1>Invalid anti-forgery token</h1>"))
+
 (defn wrap-anti-forgery
   "Middleware that prevents CSRF attacks. Any POST request to this handler must
   contain a '__anti-forgery-token' parameter equal to the last value of the
   *anti-request-forgery* var. If the token is missing or incorrect, an access-
   denied response is returned."
-  [handler]
+  [handler & {:keys [on-potential-csrf-attack generate-token-fn]
+              :or {on-potential-csrf-attack invalid-csrf-token
+                   generate-token-fn #(random/base64 60)}}]
   (fn [request]
-    (binding [*anti-forgery-token* (csrf-token request)]
+    (binding [*anti-forgery-token* (csrf-token request generate-token-fn)]
       (if (and (post-request? request) (not (valid-request? request *anti-forgery-token*)))
-        (access-denied "<h1>Invalid anti-forgery token</h1>")
+        (on-potential-csrf-attack request)
         (if-let [response (handler request)]
           (assoc-csrf-token response request *anti-forgery-token*))))))
