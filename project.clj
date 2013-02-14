@@ -1,4 +1,4 @@
-(defproject org.clojars.doo/ring-anti-forgery "0.3.0"
+(defproject org.clojars.doo/ring-anti-forgery "0.3.1"
   :description "Ring middleware to prevent CSRF attacks"
   :url "https://github.com/weavejester/ring-anti-forgery"
   :license {:name "The MIT License"
