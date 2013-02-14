@@ -56,6 +56,7 @@
   (fn [request]
     (binding [*anti-forgery-token* (csrf-token request generate-token-fn)]
       (if (and (post-request? request) (not (valid-request? request *anti-forgery-token*)))
-        (on-potential-csrf-attack request)
+        (or (on-potential-csrf-attack request)
+            (handler request))
         (if-let [response (handler request)]
           (assoc-csrf-token response request *anti-forgery-token*))))))
