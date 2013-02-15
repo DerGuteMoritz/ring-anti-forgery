@@ -28,8 +28,12 @@
                    (map bit-xor (.getBytes a) (.getBytes b))))
     false))
 
+(defn request-token [request]
+  (or (-> request form-params (get "__anti-forgery-token"))
+      (-> request :headers (get "anti-forgery-token"))))
+
 (defn- valid-request? [request stored-token]
-  (let [param-token  (-> request form-params (get "__anti-forgery-token"))]
+  (let [param-token (request-token request)]
     (and param-token
          stored-token
          (secure-eql? param-token stored-token))))
